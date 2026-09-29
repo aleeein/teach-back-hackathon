@@ -90,34 +90,13 @@ npm run check
 
 You should see `Works (… ms). The model said: …`. If not, the message says what's wrong (see Troubleshooting).
 
-### 6. Run it for real
+### 6. Run
 
 ```
 npm start
 ```
 
 Open http://localhost:3000. The banner should be gone. Teach Byte something in the phishing course and it will use the real model. Turn Demo mode off in **Profile → Presenting** if you turned it on earlier.
-
-## Put it on GitHub
-
-Keep the repository **private** during the hackathon: the challenge material is for hackathon use only.
-
-1. Install Git from https://git-scm.com.
-2. On https://github.com, click **New repository**, name it `teachback`, choose **Private**, and don't add a README (you already have one).
-3. In the project folder, run:
-
-```
-git init
-git add .
-git commit -m "TeachBack prototype"
-git branch -M main
-git remote add origin https://github.com/YOUR-USERNAME/teachback.git
-git push -u origin main
-```
-
-4. Before pushing, run `git status` and check that `.env` is **not** listed. `.gitignore` should keep it out. If `.env` ever reaches GitHub, delete that key in the Anthropic Console straight away and create a new one.
-
-Teammates then run `git clone …`, create their own `.env`, and use `npm start`.
 
 ## Where to change things
 
