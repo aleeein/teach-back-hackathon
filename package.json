@@ -1,0 +1,12 @@
+{
+  "name": "teachback-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TeachBack: learn it by teaching Byte, an AI student. Hackathon prototype.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node scripts/check-ai.mjs"
+  }
+}
