@@ -208,6 +208,11 @@ details summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--muted)
 .badge.locked{color:var(--muted)}
 .badge.locked .disc{border:2px dashed var(--line);box-shadow:none;color:var(--muted);background:transparent}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;display:flex;gap:12px;align-items:center;padding:12px 18px;border-radius:20px;background:var(--surface);border:2.5px solid var(--outline);box-shadow:0 5px 0 var(--outline);max-width:calc(100vw - 32px)}
+.xp-pop{position:fixed;top:calc(70px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:21;padding:8px 16px;border-radius:999px;background:var(--sun);color:var(--sticker-ink);font-weight:800;border:2.5px solid var(--outline);box-shadow:0 4px 0 var(--outline);animation:xpfloat 1.6s ease-out forwards}
+@keyframes xpfloat{0%{opacity:0;transform:translate(-50%,8px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+.levelup{position:fixed;top:calc(70px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:21;display:flex;gap:14px;align-items:center;padding:14px 20px;border-radius:22px;background:var(--surface);border:2.5px solid var(--outline);box-shadow:0 6px 0 var(--outline);max-width:calc(100vw - 32px);animation:lvpop .35s ease-out}
+@keyframes lvpop{from{opacity:0;transform:translate(-50%,0) scale(.8)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@media (prefers-reduced-motion:reduce){.xp-pop,.levelup{animation:none}}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:19;overflow:hidden}
 .confetti i{position:absolute;top:-12px;width:10px;height:14px;border-radius:2px;animation:fall 1.6s ease-in forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
@@ -378,6 +383,7 @@ details.tools{border:1px dashed var(--line);border-radius:14px;padding:10px 14px
   <nav class="tabbar" id="tabbar" aria-label="Sections"></nav>
   <div id="live" class="sr-only" aria-live="polite"></div>
   <div id="toast" aria-live="polite"></div>
+  <div id="xpPop" aria-live="polite"></div>
   <div id="confetti" class="confetti" aria-hidden="true"></div>
 </div>
 <script>
@@ -1893,6 +1899,8 @@ ${asData("source_material", course.material.slice(0, 3e4))}` : ""}`;
     nav: profile.onboarded ? { tab: "home" } : { onb: 0 },
     days: [],
     seenBadges: [],
+    lastXp: null,
+    lastLevel: null,
     picker: { title: "", material: "", fileName: "", truncated: false, draft: null, module: null }
   });
   var S2 = load() || fresh();
@@ -2091,7 +2099,32 @@ ${asData("source_material", course.material.slice(0, 3e4))}` : ""}`;
   }
   var byteGear = (p) => REWARD() === "build" ? p.gear : {};
   var badgeHtml = (b) => `<div class="badge ${b.earned ? "" : "locked"}" title="${esc(b.how)}"><div class="disc" style="${b.earned ? `background:${b.color}` : ""}">${b.earned ? esc(b.face) : "?"}</div>${esc(b.label)}${b.earned ? "" : `<span class="tiny muted" style="font-weight:600">${esc(b.how)}</span>`}</div>`;
+  function showXpGain(p) {
+    if (S2.lastXp == null) {            // first run: remember, don't celebrate old progress
+      S2.lastXp = p.xp;
+      S2.lastLevel = p.level;
+      save();
+      return;
+    }
+    const gained = p.xp - S2.lastXp;
+    const levelUp = p.level > S2.lastLevel;
+    if (gained <= 0) return;             // nothing new
+    S2.lastXp = p.xp;
+    S2.lastLevel = p.level;
+    save();
+    if (REWARD() !== "quest") return;    // only for the "Quests and badges" style
+    announce(`${gained} XP earned${levelUp ? `. Level ${p.level}!` : ""}`);
+    const box = $("#xpPop");
+    box.innerHTML = levelUp
+      ? `<div class="levelup" role="status">${byteSvg(56, "cheer", byteGear(p))}<div><div class="label">Level up</div><b style="font-size:22px">Level ${p.level}</b><div class="small muted">${50 - p.into} XP to level ${p.level + 1}</div></div></div>`
+      : `<div class="xp-pop" role="status">+${gained} XP</div>`;
+    if (levelUp) confetti(48);
+    clearTimeout(showXpGain.timer);
+    showXpGain.timer = setTimeout(() => { box.innerHTML = ""; }, levelUp ? 3200 : 1600);
+  }
+  
   function checkNewRewards(p) {
+    showXpGain(p);
     const style = REWARD();
     const earnedIds = style === "build" ? Object.entries(p.gear).filter(([, v]) => v).map(([k]) => `gear-${k}`) : p.badges.filter((b) => b.earned).map((b) => b.id);
     const got = earnedIds.filter((id2) => !S2.seenBadges.includes(id2));
